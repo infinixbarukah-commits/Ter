@@ -1,0 +1,345 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Zix AI Hub</title>
+<style>
+  :root{
+    --bg:#0b0b0b; --panel:#0f1113; --accent:#00ffae; --muted:#9aa4aa;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0;font-family:Inter,system-ui,Arial,Helvetica,sans-serif;
+    background:linear-gradient(180deg,#070808,#0b0b0b);color:#e9f7f1;
+    -webkit-font-smoothing:antialiased;padding:20px;
+  }
+  .wrap{max-width:980px;margin:0 auto}
+  header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .brand{font-weight:800;color:var(--accent);font-size:20px}
+  .desc{color:var(--muted);margin-left:auto;font-size:13px}
+  .grid{display:grid;grid-template-columns:1fr 360px;gap:16px}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:14px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  nav.tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+  .tab{padding:8px 12px;border-radius:10px;background:rgba(255,255,255,0.02);cursor:pointer;color:var(--muted)}
+  .tab.active{background:linear-gradient(90deg,var(--accent),#7c3aed);color:#071022;font-weight:700}
+  input,textarea,select,button{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:inherit;font-size:14px}
+  button{background:var(--accent);color:#071022;border:none;cursor:pointer;font-weight:700}
+  .small{font-size:13px;color:var(--muted)}
+  .messages{height:300px;overflow:auto;padding:10px;border-radius:8px;background:rgba(0,0,0,0.28);display:flex;flex-direction:column;gap:8px}
+  .msg{padding:10px;border-radius:10px;max-width:80%}
+  .u{background:linear-gradient(90deg,#2f1b4f,#5b3be7);color:#fff;margin-left:auto}
+  .a{background:rgba(255,255,255,0.03)}
+  .img-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+  .thumb{width:100%;height:160px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.04)}
+  .note{background:rgba(255,255,255,0.02);padding:10px;border-radius:8px;color:var(--muted);font-size:13px}
+  footer{margin-top:18px;text-align:center;color:var(--muted);font-size:13px}
+  a.download{color:var(--accent);font-weight:700;text-decoration:none}
+  @media (max-width:900px){ .grid{grid-template-columns:1fr} .rightcol{order:2} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">🤖 Zix AI Hub</div>
+    <div class="small">Chat • Gambar • Video • TikTok</div>
+    <div class="desc">Siap — tempel prompt sebelum generate</div>
+  </header>
+
+  <div class="grid">
+    <div class="card left">
+      <nav class="tabs" id="tabs">
+        <div class="tab active" data-tab="chat">Chat AI</div>
+        <div class="tab" data-tab="image">Image Gen</div>
+        <div class="tab" data-tab="video">Video Gen</div>
+        <div class="tab" data-tab="tiktok">TikTok DL</div>
+      </nav>
+
+      <!-- CHAT -->
+      <section id="panel-chat">
+        <div class="small" style="margin-bottom:8px">Tanya AI — jawaban via public API (proxy).</div>
+        <div class="messages" id="chat-window"></div>
+        <textarea id="chat-input" rows="2" placeholder="Tulis pertanyaan..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="send-chat" style="flex:1">Kirim</button>
+          <button id="clear-chat" class="small" style="width:120px">Bersihkan</button>
+        </div>
+      </section>
+
+      <!-- IMAGE -->
+      <section id="panel-image" style="display:none">
+        <div class="small" style="margin-bottom:8px">Masukkan prompt lalu tekan <b>Buat Gambar</b>.</div>
+        <input id="img-prompt" placeholder="Contoh: 'neon cyberpunk beach at sunset'"/>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="gen-image" style="flex:1">Buat Gambar</button>
+          <button id="clear-images" class="small" style="width:120px">Clear</button>
+        </div>
+        <div class="img-grid" id="image-results" style="margin-top:12px"></div>
+      </section>
+
+      <!-- VIDEO -->
+      <section id="panel-video" style="display:none">
+        <div class="small" style="margin-bottom:8px">Masukkan prompt lalu tekan <b>Buat Video</b>. (Client-side demo loop)</div>
+        <input id="vid-prompt" placeholder="Contoh: 'floating jellyfish neon loop'"/>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="gen-video" style="flex:1">Buat Video</button>
+          <button id="clear-video" class="small" style="width:120px">Clear</button>
+        </div>
+        <div id="video-results" style="margin-top:12px"></div>
+      </section>
+
+      <!-- TIKTOK -->
+      <section id="panel-tiktok" style="display:none">
+        <div class="small" style="margin-bottom:8px">Tempel link TikTok lalu tekan <b>Download</b>. Hasil: link manual buka/download.</div>
+        <input id="tt-link" placeholder="Tempel link TikTok (https://vt.tiktok.com/...)"/>
+        <div style="display:flex;gap:8px;margin-top:8px">
+          <button id="download-tt" style="flex:1">Download</button>
+          <button id="open-tt" class="small" style="width:120px" disabled>Buka</button>
+        </div>
+        <div id="tt-meta" class="note" style="margin-top:10px">Belum ada aksi.</div>
+      </section>
+    </div>
+
+    <div class="card rightcol">
+      <div style="font-weight:800;margin-bottom:8px">Kontrol Cepat</div>
+      <div class="small" style="margin-bottom:10px">Isi prompt dulu sebelum generate. Semua download muncul sebagai link — klik untuk buka/unduh.</div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <button id="demo-fill" class="small">Isi Prompt Demo</button>
+        <button id="copy-html" class="small">Copy HTML</button>
+        <button id="download-index" class="small">Download index.html</button>
+      </div>
+
+      <div style="height:12px"></div>
+      <div class="note">
+        Developed by Zix. Jika ada error "Failed to fetch", ulangi 1x (proxy publik kadang rate-limit).
+      </div>
+    </div>
+  </div>
+
+  <footer>© Zix — <span class="small">All features: chat, image, video (demo), tikok download (link)</span></footer>
+</div>
+
+<script>
+/* Helpers & proxy fallback
+   We'll try allorigins first, then corsproxy.io if needed.
+*/
+const $ = sel => document.querySelector(sel);
+const $$ = sel => document.querySelectorAll(sel);
+
+async function fetchViaProxy(target){
+  const proxies = [
+    url=> 'https://api.allorigins.win/raw?url=' + encodeURIComponent(url),
+    url=> 'https://corsproxy.io/?' + encodeURIComponent(url)
+  ];
+  let lastErr = null;
+  for(const p of proxies){
+    const url = p(target);
+    try{
+      const res = await fetch(url, {cache:'no-cache'});
+      if(!res.ok) throw new Error('HTTP ' + res.status);
+      // try parse as json if possible, else return text
+      const ct = res.headers.get('content-type') || '';
+      if(ct.includes('application/json')) return await res.json();
+      return await res.text();
+    }catch(err){
+      lastErr = err;
+      // try next proxy
+    }
+  }
+  throw lastErr || new Error('Proxy failed');
+}
+
+/* TABS */
+$('#tabs').addEventListener('click', e=>{
+  const t = e.target.closest('.tab'); if(!t) return;
+  $$('.tab').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active');
+  const name = t.dataset.tab;
+  ['chat','image','video','tiktok'].forEach(n=>{
+    const el = document.getElementById('panel-'+n);
+    if(el) el.style.display = (n===name ? 'block' : 'none');
+  });
+});
+
+/* CHAT */
+const chatWindow = $('#chat-window');
+function appendChat(who, text){
+  const d = document.createElement('div');
+  d.className = 'msg ' + (who==='u' ? 'u' : 'a');
+  d.textContent = text;
+  chatWindow.appendChild(d);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+$('#send-chat').addEventListener('click', async ()=>{
+  const q = $('#chat-input').value.trim();
+  if(!q) return alert('Tulis pesan dulu');
+  appendChat('u', q);
+  appendChat('a', 'Sedang memproses...');
+  $('#chat-input').value = '';
+  try{
+    // monkedev public chat
+    const api = 'https://api.monkedev.com/fun/chat?msg=' + encodeURIComponent(q);
+    const dataText = await fetchViaProxy(api);
+    let reply = '';
+    if(typeof dataText === 'string'){
+      try{ const parsed = JSON.parse(dataText); reply = parsed.response || JSON.stringify(parsed); }catch{ reply = dataText; }
+    } else reply = dataText.response || JSON.stringify(dataText);
+    // replace last AI message
+    const nodes = chatWindow.querySelectorAll('.a');
+    if(nodes.length) nodes[nodes.length-1].textContent = reply;
+    else appendChat('a', reply);
+  }catch(err){
+    const nodes = chatWindow.querySelectorAll('.a');
+    if(nodes.length) nodes[nodes.length-1].textContent = 'Error: ' + err.message;
+  }
+});
+$('#clear-chat').addEventListener('click', ()=>{ chatWindow.innerHTML=''; });
+
+/* IMAGE generation via Lexica (proxied) */
+$('#gen-image').addEventListener('click', async ()=>{
+  const prompt = $('#img-prompt').value.trim();
+  const container = $('#image-results');
+  if(!prompt) return alert('Isi prompt gambar dulu');
+  const placeholder = document.createElement('div'); placeholder.className='note'; placeholder.textContent = 'Mencari gambar untuk: ' + prompt;
+  container.prepend(placeholder);
+  try{
+    const api = 'https://lexica.art/api/v1/search?q=' + encodeURIComponent(prompt);
+    const res = await fetchViaProxy(api);
+    let data = res;
+    if(typeof res === 'string') data = JSON.parse(res);
+    if(data && data.images && data.images.length){
+      const imgUrl = data.images[0].src;
+      const img = document.createElement('img'); img.className='thumb'; img.src = imgUrl;
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(img);
+      const a = document.createElement('div');
+      a.innerHTML = `<br><a href="${imgUrl}" target="_blank" class="download">⬇️ Buka / Download Gambar</a><br><small style="color:var(--muted)">Prompt: ${escapeHtml(prompt)}</small>`;
+      wrapper.appendChild(a);
+      container.replaceChild(wrapper, placeholder);
+    } else {
+      // fallback to unsplash
+      const unsplash = 'https://source.unsplash.com/800x600/?' + encodeURIComponent(prompt.split(' ').slice(0,6).join(','));
+      const img = document.createElement('img'); img.className='thumb'; img.src = unsplash + '&' + Date.now();
+      const wrapper = document.createElement('div');
+      wrapper.appendChild(img);
+      wrapper.innerHTML += `<br><a href="${unsplash}" target="_blank" class="download">⬇️ Buka / Download (Unsplash)</a><br><small style="color:var(--muted)">Prompt: ${escapeHtml(prompt)}</small>`;
+      container.replaceChild(wrapper, placeholder);
+    }
+  }catch(err){
+    placeholder.textContent = 'Gagal membuat gambar: ' + err.message;
+  }
+});
+$('#clear-images').addEventListener('click', ()=>{ $('#image-results').innerHTML=''; });
+
+/* VIDEO generation: client-side animated SVG loop + download link
+   (no external API needed so always fast)
+*/
+function makeSVGVideo(prompt){
+  // simple colorful animated SVG with prompt text
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='800' height='450'>
+    <defs>
+      <linearGradient id='g' x1='0' x2='1'><stop offset='0' stop-color='#7c3aed'/><stop offset='1' stop-color='#06b6d4'/></linearGradient>
+      <style>
+        .txt{font:24px sans-serif;fill:#cfeffd}
+        .pulse{animation:pulse 3s infinite}
+        @keyframes pulse{0%{opacity:0.4}50%{opacity:1}100%{opacity:0.4}}
+      </style>
+    </defs>
+    <rect width='100%' height='100%' fill='#071022'/>
+    <g transform='translate(40,40)'>
+      <rect rx='12' width='720' height='370' fill='rgba(255,255,255,0.02)'/>
+      <text x='360' y='200' class='txt' text-anchor='middle' >${escapeXml(prompt)}</text>
+      <circle cx='120' cy='120' r='40' fill='url(#g)' class='pulse'/>
+      <circle cx='600' cy='260' r='30' fill='url(#g)' class='pulse'/>
+    </g>
+  </svg>`;
+  return svg;
+}
+
+$('#gen-video').addEventListener('click', ()=>{
+  const prompt = $('#vid-prompt').value.trim();
+  const container = $('#video-results');
+  if(!prompt) return alert('Isi prompt video dulu');
+  container.innerHTML = '';
+  const svg = makeSVGVideo(prompt);
+  const dataUrl = 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  const img = document.createElement('img'); img.src = dataUrl; img.className='thumb';
+  const downHtml = `<br><a href="${dataUrl}" target="_blank" class="download">⬇️ Buka / Download SVG (video demo)</a><br><small style="color:var(--muted)">Prompt: ${escapeHtml(prompt)}</small>`;
+  container.appendChild(img);
+  container.innerHTML += downHtml;
+});
+$('#clear-video').addEventListener('click', ()=>{ $('#video-results').innerHTML=''; });
+
+/* TIKTOK downloader via tikwm (proxied) */
+$('#download-tt').addEventListener('click', async ()=>{
+  const link = $('#tt-link').value.trim();
+  const meta = $('#tt-meta');
+  if(!link) return alert('Tempel link TikTok dulu');
+  meta.textContent = 'Memproses...';
+  try{
+    const api = 'https://tikwm.com/api/?url=' + encodeURIComponent(link);
+    const res = await fetchViaProxy(api);
+    let data = res;
+    if(typeof res === 'string') data = JSON.parse(res);
+    if(!data || !data.data) throw new Error('Gagal ambil metadata');
+    // build list of possible URLs
+    const d = data.data;
+    const links = [];
+    if(d.play) links.push({label:'Video (play)', url:d.play});
+    if(d.nowm) links.push({label:'Video (no watermark)', url:d.nowm});
+    if(d.music) links.push({label:'Audio', url:d.music});
+    if(d.download) links.push({label:'Download', url:d.download});
+    // try scan object for any url strings if none found
+    if(!links.length){
+      const text = JSON.stringify(d);
+      const found = text.match(/https?:\/\/[^"'\s,}]+/g) || [];
+      const uniq = Array.from(new Set(found)).slice(0,6);
+      uniq.forEach((u,i)=>links.push({label:'Link '+(i+1), url:u}));
+    }
+    if(!links.length) throw new Error('No downloadable links found');
+    let html = `<strong>${escapeHtml(d.title || d.text || 'Video')}</strong><br/><small>${escapeHtml(d.author?.nickname || d.author || '')}</small><br/><div style="margin-top:8px">`;
+    links.forEach(l=>{
+      html += `<div style="margin-top:6px"><a href="${encodeURI(l.url)}" target="_blank" class="download">${escapeHtml(l.label)}</a> <span style="color:var(--muted);font-size:12px"> ${shorten(l.url)}</span></div>`;
+    });
+    html += '</div>';
+    meta.innerHTML = html;
+    $('#open-tt').disabled = false;
+    $('#open-tt').onclick = ()=> window.open(link,'_blank');
+  }catch(err){
+    meta.textContent = 'Error: ' + err.message;
+  }
+});
+
+/* Quick actions */
+$('#demo-fill').addEventListener('click', ()=>{
+  $('#img-prompt').value = 'neon cyberpunk beach at sunset';
+  $('#vid-prompt').value = 'floating neon jellyfish loop';
+  $('#chat-input').value = 'Beri aku 3 ide konten TikTok viral tentang editing cepat';
+});
+
+/* Copy / download index */
+$('#copy-html').addEventListener('click', async ()=>{
+  try{
+    await navigator.clipboard.writeText(document.documentElement.outerHTML);
+    alert('HTML disalin ke clipboard.');
+  }catch(e){ alert('Gagal copy: '+e.message); }
+});
+$('#download-index').addEventListener('click', ()=>{
+  const blob = new Blob([document.documentElement.outerHTML], {type:'text/html'});
+  const u = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = u; a.download = 'index.html'; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(u);
+});
+
+/* Utils */
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escapeXml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function shorten(u){ try{ return u.length>60?u.slice(0,55)+'...':u }catch(e){return u;} }
+
+/* initial welcome */
+appendInitial();
+function appendInitial(){ appendChat('a','Halo! Selamat datang di Zix AI Hub — mulai dengan chat atau isi prompt gambar/video.'); }
+
+</script>
+</body>
+</html>
